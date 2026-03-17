@@ -1,0 +1,204 @@
+=== server.js ===
+const express = require("express");
+const app = express();
+const http = require("http").createServer(app);
+const io = require("socket.io")(http);
+
+app.use(express.static("public"));
+
+let players = {};
+
+io.on("connection", (socket) => {
+  players[socket.id] = { x: 500, y: 300 };
+
+  socket.emit("init", players);
+
+  socket.broadcast.emit("newPlayer", {
+    id: socket.id,
+    player: players[socket.id]
+  });
+
+  socket.on("move", (data) => {
+    if (players[socket.id]) {
+      players[socket.id] = data;
+    }
+    socket.broadcast.emit("update", {
+      id: socket.id,
+      player: data
+    });
+  });
+
+  socket.on("disconnect", () => {
+    delete players[socket.id];
+    io.emit("remove", socket.id);
+  });
+});
+
+http.listen(3000, () => console.log("http://localhost:3000"));
+
+
+
+=== package.json ===
+{
+  "name": "football-game",
+  "version": "1.0.0",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
+  }
+}
+
+
+
+=== public/index.html ===
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Football Game</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>⚽ Online Football</h1>
+<canvas id="gameCanvas"></canvas>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
+
+
+
+=== public/style.css ===
+body {
+  text-align: center;
+  background: #0b6623;
+  color: white;
+  font-family: Arial;
+}
+
+canvas {
+  background: green;
+  border: 2px solid white;
+}
+
+
+
+=== public/game.js ===
+const socket = io();
+
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+canvas.width = 1000;
+canvas.height = 600;
+
+let players = {};
+let myId;
+
+// TOP
+let ball = {
+  x: 500,
+  y: 300,
+  vx: 0,
+  vy: 0,
+  friction: 0.98
+};
+
+// INPUT
+let keys = {};
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+// SOCKET
+socket.on("connect", () => {
+  myId = socket.id;
+});
+
+socket.on("init", data => players = data);
+socket.on("newPlayer", data => players[data.id] = data.player);
+socket.on("update", data => players[data.id] = data.player);
+socket.on("remove", id => delete players[id]);
+
+// GAME LOOP
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+// UPDATE
+function update() {
+  let me = players[myId];
+  if (!me) return;
+
+  let speed = 3;
+
+  if (keys["w"]) me.y -= speed;
+  if (keys["s"]) me.y += speed;
+  if (keys["a"]) me.x -= speed;
+  if (keys["d"]) me.x += speed;
+
+  // ŞUT (SPACE)
+  if (keys[" "]) {
+    let dx = ball.x - me.x;
+    let dy = ball.y - me.y;
+    ball.vx = dx * 0.5;
+    ball.vy = dy * 0.5;
+  }
+
+  // TOP ÇARPIŞMA
+  let dx = ball.x - me.x;
+  let dy = ball.y - me.y;
+  let dist = Math.sqrt(dx*dx + dy*dy);
+
+  if (dist < 20) {
+    ball.vx = dx * 0.2;
+    ball.vy = dy * 0.2;
+  }
+
+  // TOP FİZİĞİ
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+  ball.vx *= ball.friction;
+  ball.vy *= ball.friction;
+
+  // SUNUCUYA GÖNDER
+  socket.emit("move", me);
+}
+
+// DRAW
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // SAHA
+  ctx.fillStyle = "#0b6623";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // ORTA ÇİZGİ
+  ctx.strokeStyle = "white";
+  ctx.beginPath();
+  ctx.moveTo(500, 0);
+  ctx.lineTo(500, 600);
+  ctx.stroke();
+
+  // TOP
+  ctx.fillStyle = "white";
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, 10, 0, Math.PI * 2);
+  ctx.fill();
+
+  // OYUNCULAR
+  for (let id in players) {
+    let p = players[id];
+
+    ctx.fillStyle = id === myId ? "blue" : "red";
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 15, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+gameLoop();
