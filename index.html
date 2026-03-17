@@ -188,3 +188,243 @@
     border-bottom: 1px solid rgba(255,255,255,0.2);
     padding-bottom: 5px;
 }
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eFootball 2026 PRO | Ultimate Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Oswald:wght@300;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --gs-red: #b91c1c;
+            --gs-gold: #fbbf24;
+            --pitch: #16a34a;
+            --ui-blue: #1e40af;
+            --dark: #020617;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Oswald', sans-serif; }
+        body { background: var(--dark); color: white; overflow-x: hidden; }
+
+        /* HEADER & NAV */
+        header {
+            background: linear-gradient(135deg, var(--gs-red), var(--dark), var(--ui-blue));
+            padding: 30px; text-align: center; border-bottom: 5px solid var(--gs-gold);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 3rem; text-shadow: 0 0 15px var(--gs-gold); }
+
+        nav {
+            display: flex; justify-content: center; background: rgba(255,255,255,0.05);
+            padding: 10px; position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(10px);
+        }
+        .nav-btn {
+            padding: 12px 25px; margin: 0 10px; border: 1px solid var(--gs-gold);
+            background: transparent; color: var(--gs-gold); cursor: pointer;
+            font-weight: bold; font-size: 1.1rem; transition: 0.3s;
+        }
+        .nav-btn:hover, .nav-btn.active { background: var(--gs-gold); color: black; }
+
+        /* PAGES */
+        .container { max-width: 1100px; margin: 20px auto; padding: 0 20px; }
+        .page { display: none; animation: kickoff 0.5s ease; }
+        .active { display: block; }
+        @keyframes kickoff { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* WORLD TEAMS GRID */
+        .league-title { color: var(--gs-gold); margin: 25px 0 10px; border-left: 5px solid var(--gs-red); padding-left: 10px; }
+        .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; }
+        .team-card {
+            background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;
+            text-align: center; border-bottom: 3px solid var(--ui-blue); transition: 0.3s;
+        }
+        .team-card:hover { background: var(--ui-blue); transform: scale(1.05); }
+        .team-card.gs { border-bottom-color: var(--gs-red); background: rgba(185, 28, 28, 0.2); }
+
+        /* ADVANCED MATCH ENGINE */
+        #stadium {
+            width: 100%; max-width: 800px; height: 500px; background: radial-gradient(circle, #22c55e 0%, #15803d 100%);
+            margin: 20px auto; border: 5px solid white; border-radius: 20px; position: relative;
+            overflow: hidden; cursor: crosshair; box-shadow: 0 0 40px rgba(22, 163, 74, 0.4);
+        }
+        .ball { 
+            width: 22px; height: 22px; background: white; border-radius: 50%;
+            position: absolute; border: 2px solid #333; box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .goal-area { position: absolute; top: 0; left: 30%; width: 40%; height: 15px; background: rgba(255,255,255,0.8); border-radius: 0 0 10px 10px; }
+        .goalkeeper { 
+            width: 50px; height: 15px; background: #ea580c; position: absolute; 
+            top: 20px; border-radius: 5px; transition: 0.1s linear;
+        }
+        
+        /* TRANSFER MARKET */
+        .market-list { background: rgba(255,255,255,0.02); border-radius: 15px; padding: 20px; }
+        .player-item {
+            display: flex; justify-content: space-between; padding: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1); transition: 0.2s;
+        }
+        .player-item:hover { background: rgba(255,255,255,0.05); }
+        .price { color: var(--gs-gold); font-weight: bold; }
+
+        /* MOBILE CONTROLS */
+        .commentary { text-align: center; font-size: 1.5rem; margin-top: 15px; color: var(--gs-gold); min-height: 40px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>eFOOTBALL 2026 PRO</h1>
+        <p>WORLD LEAGUE & TACTICAL SIMULATOR</p>
+    </header>
+
+    <nav>
+        <button class="nav-btn active" onclick="show('teams')">TAKIMLAR</button>
+        <button class="nav-btn" onclick="show('match')">MAÇ MOTORU</button>
+        <button class="nav-btn" onclick="show('market')">TRANSFERLER</button>
+    </nav>
+
+    <div class="container">
+        
+        <div id="teams" class="page active">
+            <h2 class="league-title">🇹🇷 SÜPER LİG</h2>
+            <div class="team-grid">
+                <div class="team-card gs">GALATASARAY SK</div>
+                <div class="team-card">FENERBAHÇE</div>
+                <div class="team-card">BEŞİKTAŞ</div>
+                <div class="team-card">TRABZONSPOR</div>
+            </div>
+            
+            <h2 class="league-title">🌍 AVRUPA DEVLERİ</h2>
+            <div class="team-grid">
+                <div class="team-card">REAL MADRID</div>
+                <div class="team-card">MANCHESTER CITY</div>
+                <div class="team-card">BAYERN MUNICH</div>
+                <div class="team-card">INTER MILAN</div>
+                <div class="team-card">BARCELONA</div>
+                <div class="team-card">ARSENAL</div>
+                <div class="team-card">AC MILAN</div>
+                <div class="team-card">PSG</div>
+            </div>
+        </div>
+
+        <div id="match" class="page">
+            <div id="stadium">
+                <div class="goal-area"></div>
+                <div id="gk" class="goalkeeper" style="left: 47%;"></div>
+                <div id="ball" class="ball" style="top: 400px; left: 390px;"></div>
+            </div>
+            <div class="commentary" id="spiker">Maça hazırız! Şut için tıkla!</div>
+            <div style="text-align: center; margin-top: 10px;">
+                <h3 style="font-size: 2rem;">SKOR: <span id="userScore">0</span> - <span id="aiScore">0</span></h3>
+            </div>
+        </div>
+
+        <div id="market" class="page">
+            <div class="market-list">
+                <h2 style="margin-bottom: 20px;">2026 TRANSFER LİSTESİ</h2>
+                <div class="player-item"><span>Victor Osimhen (GS)</span> <span class="price">120M €</span></div>
+                <div class="player-item"><span>Mauro Icardi (GS)</span> <span class="price">30M €</span></div>
+                <div class="player-item"><span>Erling Haaland (MC)</span> <span class="price">200M €</span></div>
+                <div class="player-item"><span>Kylian Mbappe (RM)</span> <span class="price">190M €</span></div>
+                <div class="player-item"><span>Arda Güler (RM)</span> <span class="price">80M €</span></div>
+                <div class="player-item"><span>Lamine Yamal (BAR)</span> <span class="price">150M €</span></div>
+                <button onclick="alert('Teklif sunuldu!')" style="width: 100%; padding: 15px; margin-top: 20px; background: var(--gs-gold); border: none; font-weight: bold; cursor: pointer;">TEKLİF YAP</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Sayfa Değiştirme
+        function show(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.currentTarget.classList.add('active');
+            if(id === 'match') initGame();
+        }
+
+        // --- MAÇ MOTORU v2026 ---
+        let ballPos = { x: 390, y: 400 };
+        let ballVel = { x: 0, y: 0 };
+        let gkPos = 47;
+        let score = 0;
+        let aiScore = 0;
+        let gameActive = false;
+
+        const stadium = document.getElementById('stadium');
+        const ballEl = document.getElementById('ball');
+        const gkEl = document.getElementById('gk');
+        const spiker = document.getElementById('spiker');
+
+        function initGame() {
+            if(gameActive) return;
+            gameActive = true;
+            
+            stadium.addEventListener('mousedown', (e) => {
+                const rect = stadium.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                
+                // Vuruş Fiziği
+                ballVel.x = (ballPos.x - mouseX) * 0.12;
+                ballVel.y = (ballPos.y - mouseY) * 0.12;
+                spiker.innerText = "Müthiş vurdu!";
+            });
+
+            function engine() {
+                // Top Hareketi
+                ballPos.x += ballVel.x;
+                ballPos.y += ballVel.y;
+                ballVel.x *= 0.98;
+                ballVel.y *= 0.98;
+
+                // Kaleci Zekası
+                let ballPercent = (ballPos.x / stadium.clientWidth) * 100;
+                if(gkPos < ballPercent - 5) gkPos += 0.8;
+                if(gkPos > ballPercent - 5) gkPos -= 0.8;
+                gkEl.style.left = gkPos + "%";
+
+                // Duvar Çarpışmaları
+                if(ballPos.x < 0 || ballPos.x > stadium.clientWidth - 20) ballVel.x *= -1;
+                if(ballPos.y > stadium.clientHeight - 20) ballVel.y *= -1;
+
+                // GOL KONTROLÜ
+                if(ballPos.y < 30) {
+                    if(ballPos.x > stadium.clientWidth * 0.3 && ballPos.x < stadium.clientWidth * 0.7) {
+                        // Kaleci kurtardı mı?
+                        let gkRealPos = (gkPos / 100) * stadium.clientWidth;
+                        if(Math.abs(ballPos.x - gkRealPos) < 40) {
+                            spiker.innerText = "KALECİ KURTARDI!";
+                            ballVel.y *= -1.2;
+                            ballPos.y = 40;
+                        } else {
+                            spiker.innerText = "GOOOOOL! GOOOOOL!";
+                            score++;
+                            document.getElementById('userScore').innerText = score;
+                            resetBall();
+                        }
+                    } else {
+                        ballVel.y *= -1; // Aut/Direk
+                        spiker.innerText = "Dışarı çıktı!";
+                    }
+                }
+
+                ballEl.style.left = ballPos.x + "px";
+                ballEl.style.top = ballPos.y + "px";
+                requestAnimationFrame(engine);
+            }
+            engine();
+        }
+
+        function resetBall() {
+            ballVel = { x: 0, y: 0 };
+            setTimeout(() => {
+                ballPos = { x: 390, y: 400 };
+                spiker.innerText = "Top santrada.";
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
