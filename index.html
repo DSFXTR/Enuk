@@ -1,204 +1,162 @@
-=== server.js ===
-const express = require("express");
-const app = express();
-const http = require("http").createServer(app);
-const io = require("socket.io")(http);
-
-app.use(express.static("public"));
-
-let players = {};
-
-io.on("connection", (socket) => {
-  players[socket.id] = { x: 500, y: 300 };
-
-  socket.emit("init", players);
-
-  socket.broadcast.emit("newPlayer", {
-    id: socket.id,
-    player: players[socket.id]
-  });
-
-  socket.on("move", (data) => {
-    if (players[socket.id]) {
-      players[socket.id] = data;
-    }
-    socket.broadcast.emit("update", {
-      id: socket.id,
-      player: data
-    });
-  });
-
-  socket.on("disconnect", () => {
-    delete players[socket.id];
-    io.emit("remove", socket.id);
-  });
-});
-
-http.listen(3000, () => console.log("http://localhost:3000"));
-
-
-
-=== package.json ===
-{
-  "name": "football-game",
-  "version": "1.0.0",
-  "main": "server.js",
-  "dependencies": {
-    "express": "^4.18.2",
-    "socket.io": "^4.7.2"
-  }
-}
-
-
-
-=== public/index.html ===
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<title>Football Game</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eFootball 2026 | World League Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Barlow+Condensed:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gs-red: #b91c1c; --gs-gold: #fbbf24;
+            --pitch: #059669; --dark-bg: #020617;
+            --ui-blue: #2563eb;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Barlow Condensed', sans-serif; }
+        body { background: var(--dark-bg); color: white; overflow-x: hidden; }
+
+        /* --- STADYUM HEADER --- */
+        header {
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&q=80&w=1000');
+            background-size: cover; background-position: center;
+            height: 200px; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            border-bottom: 5px solid var(--gs-gold);
+        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 3rem; text-shadow: 0 0 20px var(--ui-blue); }
+
+        /* --- NAVIGASYON --- */
+        nav {
+            display: flex; justify-content: center; background: #1e293b;
+            position: sticky; top: 0; z-index: 100; border-bottom: 2px solid #334155;
+        }
+        .nav-link {
+            padding: 15px 25px; cursor: pointer; font-weight: bold; border-right: 1px solid #334155;
+            transition: 0.3s; color: #94a3b8; text-transform: uppercase;
+        }
+        .nav-link:hover, .nav-link.active { background: var(--ui-blue); color: white; }
+
+        /* --- SAYFA YAPISI --- */
+        .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; }
+        .page { display: none; animation: stadiumLights 0.5s ease-in-out; }
+        .active { display: block; }
+        @keyframes stadiumLights { from { filter: brightness(0); } to { filter: brightness(1); } }
+
+        /* --- DÜNYA TAKIMLARI LİSTESİ --- */
+        .league-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+        .team-card {
+            background: #1e293b; border-radius: 12px; padding: 15px; border-bottom: 4px solid var(--ui-blue);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .team-card.gs { border-bottom-color: var(--gs-red); background: linear-gradient(45deg, #1e293b, #450a0a); }
+
+        /* --- MAÇ MOTORU v2026 --- */
+        #stadium {
+            background: var(--pitch); width: 100%; max-width: 800px; height: 450px;
+            margin: 20px auto; border: 5px solid white; border-radius: 15px;
+            position: relative; overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+        .ball {
+            width: 20px; height: 20px; background: white; border-radius: 50%;
+            position: absolute; transition: 0.1s linear; border: 2px solid black;
+        }
+
+        /* --- TRANSFER MARKET --- */
+        .market-item {
+            background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;
+            margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .price { color: var(--gs-gold); font-weight: bold; font-family: 'Orbitron'; }
+    </style>
 </head>
 <body>
 
-<h1>⚽ Online Football</h1>
-<canvas id="gameCanvas"></canvas>
+    <header>
+        <h1>eFOOTBALL 2026</h1>
+        <p>WORLD LEAGUE & TACTICAL HUB</p>
+    </header>
 
-<script src="/socket.io/socket.io.js"></script>
-<script src="game.js"></script>
+    <nav>
+        <div class="nav-link active" onclick="showPage('teams')">Tüm Takımlar</div>
+        <div class="nav-link" onclick="showPage('match')">Maç Motoru</div>
+        <div class="nav-link" onclick="showPage('market')">Transfer Borsası</div>
+    </nav>
+
+    <div class="container">
+        
+        <div id="teams" class="page active">
+            <h2 style="margin-bottom: 20px; border-left: 5px solid var(--gs-gold); padding-left: 10px;">PRO LİG EKİPLERİ</h2>
+            <div class="league-grid">
+                <div class="team-card gs"><span>🟡🔴 GALATASARAY</span> <small>Osimhen, Icardi</small></div>
+                <div class="team-card"><span>🔵⚪ MANCHESTER CITY</span> <small>Haaland, De Bruyne</small></div>
+                <div class="team-card"><span>⚪🟣 REAL MADRID</span> <small>Mbappe, Vinicius</small></div>
+                <div class="team-card"><span>🔴⚪ ARSENAL</span> <small>Saka, Odegaard</small></div>
+                <div class="team-card"><span>🔴⚫ AC MILAN</span> <small>Leao, Theo</small></div>
+                <div class="team-card"><span>🔵🔴 BARCELONA</span> <small>Lamine Yamal</small></div>
+                <div class="team-card"><span>🔴⚪ BAYERN MÜNİH</span> <small>Harry Kane</small></div>
+                <div class="team-card"><span>🟡⚫ DORTMUND</span> <small>Brandt</small></div>
+            </div>
+        </div>
+
+        <div id="match" class="page">
+            <div id="stadium">
+                <div id="ball" class="ball" style="top: 215px; left: 390px;"></div>
+                <div style="position: absolute; left: 0; top: 175px; width: 20px; height: 100px; border: 2px solid white; border-left: none;"></div>
+                <div style="position: absolute; right: 0; top: 175px; width: 20px; height: 100px; border: 2px solid white; border-right: none;"></div>
+            </div>
+            <div style="text-align: center;">
+                <button onclick="kickBall()" style="padding: 15px 40px; background: var(--ui-blue); color: white; border: none; border-radius: 30px; font-weight: bold; cursor: pointer;">MAÇA BAŞLA / ŞUT ÇEK</button>
+                <h2 style="margin-top: 10px;">GOL: <span id="goals">0</span></h2>
+            </div>
+        </div>
+
+        <div id="market" class="page">
+            <div class="team-card" style="background: var(--gs-red); margin-bottom: 20px;">
+                <h3>BÜTÇE: 250.000.000 €</h3>
+            </div>
+            <div class="market-item"><span>Victor Osimhen</span> <span class="price">110.000.000 €</span></div>
+            <div class="market-item"><span>Erling Haaland</span> <span class="price">180.000.000 €</span></div>
+            <div class="market-item"><span>Arda Güler</span> <span class="price">65.000.000 €</span></div>
+            <div class="market-item"><span>Florian Wirtz</span> <span class="price">130.000.000 €</span></div>
+            <button onclick="alert('Teklif Gönderildi!')" style="width: 100%; padding: 10px; background: var(--gs-gold); border: none; font-weight: bold;">TEKLİF YAP</button>
+        </div>
+
+    </div>
+
+    <script>
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // MAÇ MOTORU SİSTEMİ
+        let goalCount = 0;
+        const ball = document.getElementById('ball');
+        const stadium = document.getElementById('stadium');
+
+        function kickBall() {
+            let targetX = Math.random() * (stadium.clientWidth - 20);
+            let targetY = Math.random() * (stadium.clientHeight - 20);
+            
+            ball.style.left = targetX + "px";
+            ball.style.top = targetY + "px";
+
+            // Gol Kontrolü (Sağ veya Sol Kale)
+            if (targetX > 760 && targetY > 175 && targetY < 275) {
+                goalCount++;
+                document.getElementById('goals').innerText = goalCount;
+                alert("GOOOOOL! MUHTEŞEM BİR ŞUT!");
+                resetBall();
+            }
+        }
+
+        function resetBall() {
+            setTimeout(() => {
+                ball.style.left = "390px";
+                ball.style.top = "215px";
+            }, 1000);
+        }
+    </script>
 </body>
 </html>
-
-
-
-=== public/style.css ===
-body {
-  text-align: center;
-  background: #0b6623;
-  color: white;
-  font-family: Arial;
-}
-
-canvas {
-  background: green;
-  border: 2px solid white;
-}
-
-
-
-=== public/game.js ===
-const socket = io();
-
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-
-canvas.width = 1000;
-canvas.height = 600;
-
-let players = {};
-let myId;
-
-// TOP
-let ball = {
-  x: 500,
-  y: 300,
-  vx: 0,
-  vy: 0,
-  friction: 0.98
-};
-
-// INPUT
-let keys = {};
-document.addEventListener("keydown", e => keys[e.key] = true);
-document.addEventListener("keyup", e => keys[e.key] = false);
-
-// SOCKET
-socket.on("connect", () => {
-  myId = socket.id;
-});
-
-socket.on("init", data => players = data);
-socket.on("newPlayer", data => players[data.id] = data.player);
-socket.on("update", data => players[data.id] = data.player);
-socket.on("remove", id => delete players[id]);
-
-// GAME LOOP
-function gameLoop() {
-  update();
-  draw();
-  requestAnimationFrame(gameLoop);
-}
-
-// UPDATE
-function update() {
-  let me = players[myId];
-  if (!me) return;
-
-  let speed = 3;
-
-  if (keys["w"]) me.y -= speed;
-  if (keys["s"]) me.y += speed;
-  if (keys["a"]) me.x -= speed;
-  if (keys["d"]) me.x += speed;
-
-  // ŞUT (SPACE)
-  if (keys[" "]) {
-    let dx = ball.x - me.x;
-    let dy = ball.y - me.y;
-    ball.vx = dx * 0.5;
-    ball.vy = dy * 0.5;
-  }
-
-  // TOP ÇARPIŞMA
-  let dx = ball.x - me.x;
-  let dy = ball.y - me.y;
-  let dist = Math.sqrt(dx*dx + dy*dy);
-
-  if (dist < 20) {
-    ball.vx = dx * 0.2;
-    ball.vy = dy * 0.2;
-  }
-
-  // TOP FİZİĞİ
-  ball.x += ball.vx;
-  ball.y += ball.vy;
-  ball.vx *= ball.friction;
-  ball.vy *= ball.friction;
-
-  // SUNUCUYA GÖNDER
-  socket.emit("move", me);
-}
-
-// DRAW
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // SAHA
-  ctx.fillStyle = "#0b6623";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // ORTA ÇİZGİ
-  ctx.strokeStyle = "white";
-  ctx.beginPath();
-  ctx.moveTo(500, 0);
-  ctx.lineTo(500, 600);
-  ctx.stroke();
-
-  // TOP
-  ctx.fillStyle = "white";
-  ctx.beginPath();
-  ctx.arc(ball.x, ball.y, 10, 0, Math.PI * 2);
-  ctx.fill();
-
-  // OYUNCULAR
-  for (let id in players) {
-    let p = players[id];
-
-    ctx.fillStyle = id === myId ? "blue" : "red";
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, 15, 0, Math.PI * 2);
-    ctx.fill();
-  }
-}
-
-gameLoop();
